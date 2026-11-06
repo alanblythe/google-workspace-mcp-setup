@@ -65,7 +65,7 @@ Or symlink locally into `~/.gemini/config/skills/`:
 
 #### Cohort A — Cloud Administrator (Once per GCP Project)
 
-The administrator installs and runs the **`google-workspace-mcp-admin`** skill (or script) to choose which Workspace MCPs to enable, activate the GCP APIs, grant `roles/mcp.toolUser` to the team, and generate a tamper-evident base64 configuration payload:
+The administrator installs and runs the **`google-workspace-mcp-admin`** skill (or script). The skill guides the administrator step-by-step: verifies environment prerequisites, asks how to specify the Project ID (direct input or listing via `gcloud`), selects services, previews changes via dry run, and generates the developer onboarding prompts:
 
 1. **Install the admin skill**:
 
@@ -79,9 +79,17 @@ Install the google-workspace-mcp-admin skill: npx skills add https://github.com/
 Use the google-workspace-mcp-admin skill to bootstrap GCP project YOUR_PROJECT_ID for principal group:developers@yourdomain.com.
 ```
 
-Or run the bootstrap script directly from a repository checkout:
+*(You can also simply prompt: `Use the google-workspace-mcp-admin skill` — the skill will interactively guide you through prerequisite verification and project selection).*
+
+Or run directly from a repository checkout:
 
 ```bash
+# Optional: Verify tools and active gcloud account
+python3 skills/google-workspace-mcp-admin/scripts/admin_bootstrap.py --check-prereqs
+```
+
+```bash
+# Bootstrap the project
 python3 skills/google-workspace-mcp-admin/scripts/admin_bootstrap.py YOUR_PROJECT_ID \
   --principal "group:developers@yourdomain.com"
 ```

@@ -11,6 +11,7 @@ outputs two copy-pasteable Developer Onboarding Prompts (1: install skill,
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -52,6 +53,60 @@ def get_gcloud_account() -> str | None:
     if res.returncode == 0 and account and account != "(unset)":
         return account
     return None
+
+
+def check_prerequisites() -> int:
+    """Verifies environment prerequisites (Python 3.11+, gcloud CLI, active gcloud auth).
+
+    Returns 0 if all prerequisites pass, non-zero if critical tools are missing.
+    """
+    print("\n" + "=" * 72)
+    print("🔍 Google Workspace MCP Admin: Prerequisites Check")
+    print("=" * 72)
+
+    has_errors = False
+
+    # 1. Python version check
+    py_ver = sys.version_info
+    py_str = f"v{py_ver.major}.{py_ver.minor}.{py_ver.micro}"
+    if py_ver >= (3, 11):
+        print(f"[✓] Python: 3.11+ detected ({py_str})")
+    else:
+        print(f"[✗] Python: Incompatible version {py_str}. Python 3.11+ is required.")
+        has_errors = True
+
+    # 2. gcloud CLI presence
+    gcloud_path = shutil.which("gcloud")
+    if gcloud_path:
+        res = subprocess.run(
+            ["gcloud", "--version"],
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+        )
+        version_line = res.stdout.strip().splitlines()[0] if res.stdout else "version unknown"
+        print(f"[✓] gcloud CLI: {gcloud_path} ({version_line})")
+
+        # 3. gcloud active account
+        account = get_gcloud_account()
+        if account:
+            print(f"[✓] gcloud account: {account} (active)")
+        else:
+            print("[!] gcloud account: No active account configured.")
+            print("    Please authenticate with: gcloud auth login")
+            has_errors = True
+    else:
+        print("[✗] gcloud CLI: Not found in PATH.")
+        print("    Install Google Cloud SDK: https://cloud.google.com/sdk/docs/install")
+        has_errors = True
+
+    print("=" * 72)
+    if has_errors:
+        print("❌ One or more prerequisites require attention before continuing.\n")
+        return 1
+
+    print("✨ All prerequisites verified! You are ready to bootstrap GCP projects.\n")
+    return 0
 
 
 def run_admin_bootstrap(
@@ -149,7 +204,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "project_id",
-        help="Google Cloud Project ID to bootstrap for Workspace MCP.",
+        nargs="?",
+        default=None,
+        help="Google Cloud Project ID to bootstrap for Workspace MCP (optional when using --check-prereqs).",
+    )
+    parser.add_argument(
+        "--check-prereqs",
+        action="store_true",
+        help="Verify environment prerequisites (Python 3.11+, gcloud CLI, active gcloud auth) and exit.",
     )
     parser.add_argument(
         "--principal",
@@ -179,6 +241,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+
+    if args.check_prereqs:
+        return check_prerequisites()
+
+    if not args.project_id:
+        print("Error: Project ID is required unless running with --check-prereqs.", file=sys.stderr)
+        print("Usage: python3 admin_bootstrap.py <PROJECT_ID> [options]", file=sys.stderr)
+        print("   or: python3 admin_bootstrap.py --check-prereqs", file=sys.stderr)
+        return 2
 
     services_arg = args.services
     if services_arg is None:

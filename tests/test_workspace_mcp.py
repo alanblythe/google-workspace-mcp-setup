@@ -571,6 +571,60 @@ class TestAdminBootstrap(unittest.TestCase):
         specs = args.args[1]
         self.assertEqual([s.slug for s in specs], ["drive", "sheets"])
 
+    @patch("admin_bootstrap.get_gcloud_account", return_value="admin@example.com")
+    @patch("admin_bootstrap.shutil.which", return_value="/usr/bin/gcloud")
+    @patch("admin_bootstrap.subprocess.run")
+    def test_check_prerequisites_success(
+        self, mock_run: MagicMock, _mock_which: MagicMock, _mock_account: MagicMock
+    ) -> None:
+        mock_run.return_value = MagicMock(returncode=0, stdout="Google Cloud SDK 500.0.0\n")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = admin_mod.check_prerequisites()
+        self.assertEqual(rc, 0)
+        out = buf.getvalue()
+        self.assertIn("[✓] Python:", out)
+        self.assertIn("[✓] gcloud CLI:", out)
+        self.assertIn("admin@example.com", out)
+        self.assertIn("All prerequisites verified!", out)
+
+    @patch("admin_bootstrap.shutil.which", return_value=None)
+    def test_check_prerequisites_missing_gcloud(self, _mock_which: MagicMock) -> None:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = admin_mod.check_prerequisites()
+        self.assertEqual(rc, 1)
+        out = buf.getvalue()
+        self.assertIn("[✗] gcloud CLI: Not found in PATH", out)
+
+    @patch("admin_bootstrap.get_gcloud_account", return_value=None)
+    @patch("admin_bootstrap.shutil.which", return_value="/usr/bin/gcloud")
+    @patch("admin_bootstrap.subprocess.run")
+    def test_check_prerequisites_unset_account(
+        self, mock_run: MagicMock, _mock_which: MagicMock, _mock_account: MagicMock
+    ) -> None:
+        mock_run.return_value = MagicMock(returncode=0, stdout="Google Cloud SDK 500.0.0\n")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = admin_mod.check_prerequisites()
+        self.assertEqual(rc, 1)
+        out = buf.getvalue()
+        self.assertIn("[!] gcloud account: No active account configured", out)
+
+    @patch("admin_bootstrap.check_prerequisites", return_value=0)
+    def test_admin_bootstrap_main_check_prereqs_flag(self, mock_check: MagicMock) -> None:
+        rc = admin_mod.main(["--check-prereqs"])
+        self.assertEqual(rc, 0)
+        mock_check.assert_called_once()
+
+    def test_admin_bootstrap_main_missing_project_id_errors(self) -> None:
+        buf_err = io.StringIO()
+        from contextlib import redirect_stderr
+        with redirect_stderr(buf_err):
+            rc = admin_mod.main([])
+        self.assertEqual(rc, 2)
+        self.assertIn("Project ID is required unless running with --check-prereqs", buf_err.getvalue())
+
 
 class TestVerifyWorkspaceMcp(unittest.TestCase):
     def test_ge_quota_coexistence_detects_agy_adc_auth_override(self) -> None:
