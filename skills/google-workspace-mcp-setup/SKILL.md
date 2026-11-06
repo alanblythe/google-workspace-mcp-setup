@@ -64,6 +64,20 @@ You can pass `--services` (e.g. `--services drive,gmail,docs` or `--services all
 
 ---
 
+### Manual ADC Login Fallback
+If the developer prefers to run `gcloud auth application-default login` manually in their terminal rather than using `--adc-login`, the agent **MUST** present the command in a strict fenced code block (` ```bash `) with backslash line continuations:
+
+```bash
+gcloud auth application-default login \
+  --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/calendar.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly,https://www.googleapis.com/auth/presentations.readonly"
+gcloud auth application-default set-quota-project <PROJECT_ID>
+```
+
+> [!WARNING]
+> Never print the `gcloud ... --scopes=...` command as unfenced prose or in bullet points. Antigravity CLI and terminal markdown renderers will mistakenly detect the comma-separated `https://` scope URIs and auto-linkify them across line breaks into broken, unclickable URLs. Always use fenced code blocks.
+
+---
+
 ### Step 2: Verify Setup & Gemini Enterprise Quota Coexistence
 
 Run the verification script to confirm everything is green:

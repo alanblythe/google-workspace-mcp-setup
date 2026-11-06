@@ -408,6 +408,20 @@ def main(argv: list[str] | None = None) -> int:
     print("\n======================================================================")
     print(f"Workspace MCP Configuration Complete (project: {project_id}, mode: {mode.value})")
     print(f"Services: {', '.join(s.slug for s in specs)}")
+    if not args.adc_login:
+        scopes_csv = ",".join(aggregate_adc_scopes(specs, mode))
+        print("\nNext Steps (Per User — keeps Gemini Enterprise seat quota intact):")
+        print("  1. Automated (Recommended): Run setup with --adc-login to launch browser login directly:")
+        if args.payload:
+            print(f"     python3 skills/google-workspace-mcp-setup/scripts/setup_workspace_mcp.py --payload {args.payload} --{scope} --adc-login\n")
+        else:
+            print(f"     python3 skills/google-workspace-mcp-setup/scripts/setup_workspace_mcp.py {project_id} --{scope} --adc-login\n")
+        print("  2. Manual: Run the login command in your terminal (fenced to preserve terminal formatting):")
+        print("```bash")
+        print("gcloud auth application-default login \\")
+        print(f'  --scopes="{scopes_csv}"')
+        print(f"gcloud auth application-default set-quota-project {project_id}")
+        print("```")
     print("======================================================================")
     return 0
 
