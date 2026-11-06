@@ -31,20 +31,33 @@ An AAIF-compliant agent skill and Antigravity plugin that configures Google's 1P
 
 ### 1. Install as an Antigravity Skill or Plugin
 
+Install the **developer skill** (`google-workspace-mcp-setup`) via `npx skills`:
+
 ```bash
-# Install the developer skill (google-workspace-mcp-setup) via npx skills
 npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
+```
 
-# Install the admin skill (google-workspace-mcp-admin) via npx skills
+Install the **admin skill** (`google-workspace-mcp-admin`) via `npx skills`:
+
+```bash
 npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-admin -a antigravity
+```
 
-# Or choose interactively between both skills
+Or choose interactively between both skills:
+
+```bash
 npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -a antigravity
+```
 
-# Or install as an Antigravity plugin
+Or install as an Antigravity plugin:
+
+```bash
 agy plugin install ./google-workspace-mcp-setup
+```
 
-# Or symlink locally into ~/.gemini/config/skills/
+Or symlink locally into `~/.gemini/config/skills/`:
+
+```bash
 ./scripts/install.sh
 ```
 
@@ -55,24 +68,35 @@ agy plugin install ./google-workspace-mcp-setup
 The administrator installs and runs the **`google-workspace-mcp-admin`** skill (or script) to choose which Workspace MCPs to enable, activate the GCP APIs, grant `roles/mcp.toolUser` to the team, and generate a tamper-evident base64 configuration payload:
 
 1. **Install the admin skill**:
-   > *"Install the google-workspace-mcp-admin skill: `npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-admin -a antigravity`"*
 
-2. **Bootstrap the GCP project** (via prompt or CLI):
-   > *"Use the google-workspace-mcp-admin skill to bootstrap GCP project `YOUR_PROJECT_ID` for principal `group:developers@yourdomain.com`."*
+```text
+Install the google-workspace-mcp-admin skill: npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-admin -a antigravity
+```
+
+2. **Bootstrap the GCP project** (via prompt in Antigravity):
+
+```text
+Use the google-workspace-mcp-admin skill to bootstrap GCP project YOUR_PROJECT_ID for principal group:developers@yourdomain.com.
+```
+
+Or run the bootstrap script directly from a repository checkout:
 
 ```bash
-# Or run directly from a repository checkout:
 python3 skills/google-workspace-mcp-admin/scripts/admin_bootstrap.py YOUR_PROJECT_ID \
   --principal "group:developers@yourdomain.com"
 ```
 
 The script interactively presents the Workspace service selector (or accepts `--services`), enables only those APIs, and prints **two copy-pasteable Developer Onboarding Prompts** (one to install the developer skill via `-s google-workspace-mcp-setup`, and a second to run the skill with the base64 JSON configuration payload):
 
-```text
-Prompt 1 (Install the skill):
-Install the google-workspace-mcp-setup skill: npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
+**Prompt 1 (Install the skill):**
 
-Prompt 2 (Configure with payload):
+```text
+Install the google-workspace-mcp-setup skill: npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
+```
+
+**Prompt 2 (Configure with payload):**
+
+```text
 Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to configure Google Workspace MCP.
 ```
 
@@ -81,10 +105,16 @@ Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to config
 Each developer runs the two prompts in Antigravity:
 
 1. **Install the developer skill**:
-   > *"Install the google-workspace-mcp-setup skill: `npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity`"*
+
+```text
+Install the google-workspace-mcp-setup skill: npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
+```
 
 2. **Configure using the skill and base64 JSON payload**:
-   > *"Use the google-workspace-mcp-setup skill with payload `<BASE64_PAYLOAD>` to configure Google Workspace MCP."*
+
+```text
+Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to configure Google Workspace MCP.
+```
 
 Antigravity installs the **`google-workspace-mcp-setup`** skill first (locally in `.agents/skills/` or globally in `~/.antigravity/skills/` or `~/.gemini/skills/`). In the second step, the skill:
 - Decodes the payload and confirms the administrator's configuration.
@@ -92,15 +122,23 @@ Antigravity installs the **`google-workspace-mcp-setup`** skill first (locally i
   - **Local (`--local`)**: Workspace plugin (`.agents/plugins/google-workspace-mcp-setup/`, safe to commit to git).
   - **Global (`--global`)**: User configuration (`~/.antigravity/config/mcp_config.json` or `~/.gemini/config/mcp_config.json`).
 - Lets the developer accept all permitted services or deselect any they don't need (strictly preventing installation of unpermitted services).
-- Guides the developer through their 1-click local browser ADC login, and verifies connectivity:
+- Guides the developer through their 1-click local browser ADC login, and verifies connectivity.
+
+Manual developer run with payload (**local** workspace plugin):
 
 ```bash
-# Manual developer run with payload (local workspace plugin):
 python3 skills/google-workspace-mcp-setup/scripts/setup_workspace_mcp.py --payload <BASE64_PAYLOAD> --local --adc-login
+```
 
-# Manual developer run with payload (global user configuration):
+Manual developer run with payload (**global** user configuration):
+
+```bash
 python3 skills/google-workspace-mcp-setup/scripts/setup_workspace_mcp.py --payload <BASE64_PAYLOAD> --global --adc-login
+```
 
+Verify Workspace MCP setup and Gemini Enterprise quota coexistence:
+
+```bash
 python3 skills/google-workspace-mcp-setup/scripts/verify_workspace_mcp.py
 ```
 
