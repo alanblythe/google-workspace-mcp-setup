@@ -1,6 +1,7 @@
 ---
 name: google-workspace-mcp-admin
-description: Admin skill to bootstrap a Google Cloud project for Google Workspace Managed MCP servers (selects services to enable, activates *mcp.googleapis.com endpoints, binds roles/mcp.toolUser to developers/groups, and outputs two developer prompts: one to install the skill and a second starting with using the skill with the base64 JSON config payload). Use when a GCP project owner or cloud administrator wants to prepare a GCP project for Workspace MCP before developers use it.
+description: >-
+  Admin skill to bootstrap a Google Cloud project for Google Workspace Managed MCP servers (selects services to enable, activates *mcp.googleapis.com endpoints, binds roles/mcp.toolUser to developers/groups, and outputs two developer prompts: one to install the skill and a second starting with using the skill with the base64 JSON config payload). Use when a GCP project owner or cloud administrator wants to prepare a GCP project for Workspace MCP before developers use it.
 license: Apache-2.0
 compatibility: Python 3.11+, gcloud CLI, Antigravity (agy)
 metadata:

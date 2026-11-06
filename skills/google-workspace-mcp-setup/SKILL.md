@@ -1,6 +1,7 @@
 ---
 name: google-workspace-mcp-setup
-description: Developer skill to configure Google Workspace Managed MCP servers (Drive, Gmail, Calendar, Docs, Sheets, Slides, Chat) for Antigravity in a repository or user environment using implicit Application Default Credentials (google_credentials) and IAM while preserving Gemini Enterprise Standard/Plus seat quota. Supports administrator base64 configuration payloads with boundary enforcement and user deselection. Use when an engineer wants to configure Workspace MCP in their repository (.agents/plugins/google-workspace-mcp-setup/) or global config, authenticate local ADC with Workspace scopes, and verify MCP connectivity without needing GCP admin rights.
+description: >-
+  Developer skill to configure Google Workspace Managed MCP servers (Drive, Gmail, Calendar, Docs, Sheets, Slides, Chat) for Antigravity in a repository or user environment using implicit Application Default Credentials (google_credentials) and IAM while preserving Gemini Enterprise Standard/Plus seat quota. Supports administrator base64 configuration payloads with boundary enforcement and user deselection. Use when an engineer wants to configure Workspace MCP in their repository (.agents/plugins/google-workspace-mcp-setup/) or global config, authenticate local ADC with Workspace scopes, and verify MCP connectivity without needing GCP admin rights.
 license: Apache-2.0
 compatibility: Python 3.11+, gcloud CLI, Antigravity (agy)
 metadata:

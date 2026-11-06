@@ -451,6 +451,29 @@ class TestAdminBootstrap(unittest.TestCase):
             "Both skill copies of harness_registry.py must remain identical.",
         )
 
+    def test_skill_md_frontmatter_valid_yaml(self) -> None:
+        try:
+            import yaml
+        except ImportError:
+            yaml = None
+
+        for rel_path in [
+            "skills/google-workspace-mcp-setup/SKILL.md",
+            "skills/google-workspace-mcp-admin/SKILL.md",
+        ]:
+            skill_path = REPO_ROOT / rel_path
+            content = skill_path.read_text(encoding="utf-8")
+            parts = content.split("---")
+            self.assertGreaterEqual(len(parts), 3, f"{rel_path} must have frontmatter delimiters")
+            fm_text = parts[1]
+            if yaml is not None:
+                data = yaml.safe_load(fm_text)
+                self.assertIsInstance(data, dict, f"{rel_path} frontmatter must parse to dict")
+                self.assertIn("name", data)
+                self.assertIn("description", data)
+                self.assertIsInstance(data["name"], str)
+                self.assertIsInstance(data["description"], str)
+
     def test_format_developer_prompts_returns_install_and_payload_prompts(self) -> None:
         payload = hr.encode_config_payload("test-project-123", ["drive", "docs"])
         install_prompt, configure_prompt = admin_mod.format_developer_prompts(payload)
