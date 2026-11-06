@@ -1,0 +1,1 @@
+../../google-workspace-mcp-setup/scripts/harness_registry.py

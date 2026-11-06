@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "run_command(git diff)",
+      "run_command(git log)",
+      "run_command(git status)"
+    ]
+  }
+}

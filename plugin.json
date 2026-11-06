@@ -1,0 +1,5 @@
+{
+  "name": "google-workspace-mcp-setup",
+  "version": "1.1.0",
+  "description": "Configures Google Workspace Managed MCP servers (Drive, Gmail, Calendar, Docs, Sheets, Slides, Chat) for Antigravity using implicit Application Default Credentials (google_credentials) and IAM."
+}
