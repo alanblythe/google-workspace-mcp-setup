@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from enum import Enum
@@ -115,9 +118,83 @@ DEFAULT_SERVICE_SLUGS: tuple[str, ...] = (
     "slides",
 )
 
-ANTIGRAVITY_LOCAL_REL_PATH = ".agents/mcp_config.json"
-ANTIGRAVITY_GLOBAL_REL_PATH = ".gemini/config/mcp_config.json"
+WORKSPACE_PLUGIN_NAME = "google-workspace-mcp-setup"
+WORKSPACE_PLUGIN_DIR_REL_PATH = f".agents/plugins/{WORKSPACE_PLUGIN_NAME}"
+ANTIGRAVITY_LOCAL_REL_PATH = f"{WORKSPACE_PLUGIN_DIR_REL_PATH}/mcp_config.json"
+ANTIGRAVITY_LOCAL_PLUGIN_MANIFEST_REL_PATH = f"{WORKSPACE_PLUGIN_DIR_REL_PATH}/plugin.json"
+ANTIGRAVITY_GLOBAL_REL_PATH = "config/mcp_config.json"
 ANTIGRAVITY_MCP_LIST_CMD: tuple[str, ...] = ("agy", "mcp", "list")
+
+
+def build_workspace_plugin_manifest() -> dict[str, Any]:
+    """Generates the workspace plugin.json marker required for Antigravity discovery."""
+    return {
+        "name": WORKSPACE_PLUGIN_NAME,
+        "description": "Google Workspace Managed MCP integration",
+        "version": "1.0.0",
+    }
+
+
+def probe_running_agy_gemini_dir(home: Path) -> Path | None:
+    """Probes running processes to check if agy was launched with --gemini_dir."""
+    try:
+        proc = subprocess.run(
+            ["ps", "-eo", "args"],
+            capture_output=True,
+            text=True,
+            timeout=1,
+            check=False,
+        )
+        if proc.returncode != 0 or not proc.stdout:
+            return None
+        for line in proc.stdout.splitlines():
+            if "agy" in line and "--gemini_dir" in line:
+                match = re.search(r"--gemini_dir[=\s]([^\s]+)", line)
+                if match:
+                    raw_path = match.group(1).strip("'\"")
+                    p = Path(raw_path).expanduser()
+                    return p.resolve() if p.is_absolute() else (home / p).resolve()
+    except Exception:
+        return None
+    return None
+
+
+def resolve_antigravity_gemini_dir(
+    *,
+    gemini_dir_arg: Path | str | None = None,
+    home_dir: Path | None = None,
+) -> Path:
+    """Discovers the active Antigravity root directory (--gemini_dir).
+
+    Discovery precedence:
+    1. Explicit CLI / function argument (`--gemini-dir`)
+    2. Environment variables (`ANTIGRAVITY_GEMINI_DIR`, `GEMINI_DIR`)
+    3. Active running process inspection (`agy --gemini_dir=...`)
+    4. Filesystem probe (`~/.antigravity` if existing config, else `~/.gemini`)
+    5. Default fallback (`~/.gemini`)
+    """
+    if gemini_dir_arg:
+        p = Path(gemini_dir_arg).expanduser()
+        return p.resolve() if p.is_absolute() else (home_dir or Path.home()).resolve() / p
+
+    for env_var in ("ANTIGRAVITY_GEMINI_DIR", "GEMINI_DIR"):
+        val = os.environ.get(env_var)
+        if val and val.strip():
+            p = Path(val.strip()).expanduser()
+            return p.resolve() if p.is_absolute() else (home_dir or Path.home()).resolve() / p
+
+    home = (home_dir or Path.home()).resolve()
+
+    proc_dir = probe_running_agy_gemini_dir(home)
+    if proc_dir:
+        return proc_dir
+
+    if (home / ".antigravity" / "config").exists():
+        return home / ".antigravity"
+    if (home / ".gemini" / "config").exists():
+        return home / ".gemini"
+
+    return home / ".gemini"
 
 
 def build_google_credentials_entry(
@@ -145,6 +222,7 @@ def resolve_antigravity_config_path(
     scope: str,
     *,
     workspace_root: Path | None = None,
+    gemini_dir: Path | str | None = None,
     home_dir: Path | None = None,
 ) -> Path:
     """Resolves the target Antigravity mcp_config.json path for 'local' or 'global' scope."""
@@ -152,8 +230,11 @@ def resolve_antigravity_config_path(
         root = workspace_root or Path.cwd()
         return root / ANTIGRAVITY_LOCAL_REL_PATH
     if scope == "global":
-        home = home_dir or Path.home()
-        return home / ANTIGRAVITY_GLOBAL_REL_PATH
+        active_gemini_dir = resolve_antigravity_gemini_dir(
+            gemini_dir_arg=gemini_dir,
+            home_dir=home_dir,
+        )
+        return active_gemini_dir / ANTIGRAVITY_GLOBAL_REL_PATH
     raise ValueError(f"Unsupported scope: {scope}")
 
 

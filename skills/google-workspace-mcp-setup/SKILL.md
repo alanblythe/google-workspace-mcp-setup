@@ -1,6 +1,6 @@
 ---
 name: google-workspace-mcp-setup
-description: Developer skill to configure Google Workspace Managed MCP servers (Drive, Gmail, Calendar, Docs, Sheets, Slides, Chat) for Antigravity in a repository or user environment using implicit Application Default Credentials (google_credentials) and IAM while preserving Gemini Enterprise Standard/Plus seat quota. Supports administrator base64 configuration payloads with boundary enforcement and user deselection. Use when an engineer wants to configure Workspace MCP in their repository (.agents/mcp_config.json) or global config, authenticate local ADC with Workspace scopes, and verify MCP connectivity without needing GCP admin rights.
+description: Developer skill to configure Google Workspace Managed MCP servers (Drive, Gmail, Calendar, Docs, Sheets, Slides, Chat) for Antigravity in a repository or user environment using implicit Application Default Credentials (google_credentials) and IAM while preserving Gemini Enterprise Standard/Plus seat quota. Supports administrator base64 configuration payloads with boundary enforcement and user deselection. Use when an engineer wants to configure Workspace MCP in their repository (.agents/plugins/google-workspace-mcp-setup/) or global config, authenticate local ADC with Workspace scopes, and verify MCP connectivity without needing GCP admin rights.
 license: Apache-2.0
 compatibility: Python 3.11+, gcloud CLI, Antigravity (agy)
 metadata:
@@ -18,7 +18,7 @@ Configures Google's 1P Managed **Google Workspace MCP servers** (`drivemcp`, `gm
 
 ## Why Implicit ADC + IAM (Instead of Shared OAuth Client Secrets)
 
-1. **Zero Shared OAuth Secrets**: Standard OAuth client flows require creating a Web Application OAuth 2.0 Client ID/Secret in Google Auth Platform and distributing the secret across every developer's `mcp_config.json`. With `"authProviderType": "google_credentials"`, the configuration file is **100% secret-free** and safe to commit directly to git (`.agents/mcp_config.json`).
+1. **Zero Shared OAuth Secrets**: Standard OAuth client flows require creating a Web Application OAuth 2.0 Client ID/Secret in Google Auth Platform and distributing the secret across every developer's `mcp_config.json`. With `"authProviderType": "google_credentials"`, the configuration is **100% secret-free** and safe to commit directly to git as a workspace plugin (`.agents/plugins/google-workspace-mcp-setup/mcp_config.json` + `plugin.json`).
 2. **Gemini Enterprise Quota Coexistence**:
    - **Antigravity Harness Login (`~/.gemini/`)**: Remains authenticated via the developer's standard Gemini Enterprise ("Use business account") login, drawing LLM turns from their **Gemini Enterprise Standard/Plus pooled seat quota**.
    - **MCP Tool Auth (`~/.config/gcloud/application_default_credentials.json`)**: Antigravity reads local ADC implicitly *only* when making outbound HTTP tool calls to `https://*mcp.googleapis.com/mcp/v1`. Do **not** set `AGY_ADC_AUTH=true` (which would switch LLM inference to Vertex AI PAYG).
@@ -47,7 +47,7 @@ This single command automatically:
 2. **Deselection & Boundary Enforcement**:
    - In an interactive terminal, presents the developer with a numbered picker showing *only* the admin-permitted services. The developer can accept all or deselect any tools they don't need (e.g. entering `1,3` to install only Drive and Docs).
    - If a developer attempts to install services outside the administrator's configuration (via `--services`), the script strictly rejects the request and lists only permitted services.
-3. **Writes Secret-Free Config**: Generates `.agents/mcp_config.json` containing only the selected services with `"authProviderType": "google_credentials"` and `"X-Goog-User-Project"`.
+3. **Writes Secret-Free Config**: Generates `.agents/plugins/google-workspace-mcp-setup/mcp_config.json` and `plugin.json` containing only the selected services with `"authProviderType": "google_credentials"` and `"X-Goog-User-Project"`.
 4. **Authenticates ADC**: Opens your browser for a quick 1-click Google authorization requesting only the OAuth scopes needed for your selected tools, and sets the ADC quota project.
 
 ---

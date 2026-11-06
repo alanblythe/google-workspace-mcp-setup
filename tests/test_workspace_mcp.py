@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -129,6 +130,48 @@ class TestHarnessRegistry(unittest.TestCase):
         selected = hr.prompt_for_services(allowed_slugs=["drive", "docs"])
         self.assertEqual(selected, "drive,docs")
 
+    def test_resolve_antigravity_gemini_dir_precedence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_home = Path(tmp) / "fake_home"
+            fake_home.mkdir()
+
+            # 1. Explicit arg wins
+            custom_arg = fake_home / "custom_gemini"
+            resolved = hr.resolve_antigravity_gemini_dir(gemini_dir_arg=custom_arg, home_dir=fake_home)
+            self.assertEqual(resolved, custom_arg.resolve())
+
+            # 2. Env var wins if arg is omitted
+            with patch.dict(os.environ, {"ANTIGRAVITY_GEMINI_DIR": str(fake_home / "env_gemini")}):
+                resolved = hr.resolve_antigravity_gemini_dir(home_dir=fake_home)
+                self.assertEqual(resolved, (fake_home / "env_gemini").resolve())
+
+            # 3. Filesystem probe: ~/.antigravity/config preferred if present
+            antigravity_cfg = fake_home / ".antigravity" / "config"
+            antigravity_cfg.mkdir(parents=True)
+            with patch.dict(os.environ, {}, clear=True):
+                # Ensure no env var interference
+                for k in ("ANTIGRAVITY_GEMINI_DIR", "GEMINI_DIR"):
+                    os.environ.pop(k, None)
+                with patch("harness_registry.probe_running_agy_gemini_dir", return_value=None):
+                    resolved = hr.resolve_antigravity_gemini_dir(home_dir=fake_home)
+                    self.assertEqual(resolved, fake_home / ".antigravity")
+
+                # 4. Fallback to ~/.gemini
+                shutil.rmtree(fake_home / ".antigravity")
+                with patch("harness_registry.probe_running_agy_gemini_dir", return_value=None):
+                    resolved = hr.resolve_antigravity_gemini_dir(home_dir=fake_home)
+                    self.assertEqual(resolved, fake_home / ".gemini")
+
+    def test_global_setup_writes_to_gemini_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_home = Path(tmp)
+            target = hr.resolve_antigravity_config_path(
+                "global",
+                gemini_dir=fake_home / ".custom_agy",
+                home_dir=fake_home,
+            )
+            self.assertEqual(target, fake_home / ".custom_agy" / "config" / "mcp_config.json")
+
 
 class TestSetupWorkspaceMcp(unittest.TestCase):
     def test_local_setup_writes_only_antigravity_agents_mcp_config_idempotently(self) -> None:
@@ -146,9 +189,15 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
             )
             self.assertEqual(rc1, 0)
 
-            target_path = ws_root / ".agents" / "mcp_config.json"
+            target_path = ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "mcp_config.json"
+            plugin_path = ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "plugin.json"
             self.assertTrue(target_path.exists(), f"Expected {target_path} to be created")
+            self.assertTrue(plugin_path.exists(), f"Expected {plugin_path} to be created")
+            self.assertFalse((ws_root / ".agents" / "mcp_config.json").exists(), "Should not create bare .agents/mcp_config.json")
             self.assertFalse((ws_root / ".mcp.json").exists(), "Should not create .mcp.json")
+
+            manifest_content = json.loads(plugin_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest_content.get("name"), "google-workspace-mcp-setup")
 
             content = json.loads(target_path.read_text(encoding="utf-8"))
             self.assertIn("google-workspace-drive", content["mcpServers"])
@@ -169,6 +218,30 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
             )
             diff = setup_mod.format_unified_diff(old_text, new_text, target_path)
             self.assertEqual(diff, "")
+
+    def test_local_setup_cleans_up_legacy_bare_mcp_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ws_root = Path(tmp)
+            legacy_bare = ws_root / ".agents" / "mcp_config.json"
+            legacy_bare.parent.mkdir(parents=True, exist_ok=True)
+            legacy_bare.write_text('{"mcpServers": {}}', encoding="utf-8")
+            self.assertTrue(legacy_bare.exists())
+
+            rc = setup_mod.main(
+                [
+                    "acme-mcp-quota",
+                    "--local",
+                    "--services",
+                    "drive",
+                    "--workspace-root",
+                    str(ws_root),
+                ]
+            )
+            self.assertEqual(rc, 0)
+            self.assertFalse(legacy_bare.exists(), "Legacy bare config should be deleted")
+            self.assertTrue(
+                (ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "mcp_config.json").exists()
+            )
 
     @patch("sys.stdin.isatty", return_value=False)
     def test_setup_with_payload_extracts_project_and_configures_servers(
@@ -192,7 +265,7 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
             )
             self.assertEqual(rc, 0)
 
-            target_path = ws_root / ".agents" / "mcp_config.json"
+            target_path = ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "mcp_config.json"
             self.assertTrue(target_path.exists())
             content = json.loads(target_path.read_text(encoding="utf-8"))
             self.assertIn("google-workspace-drive", content["mcpServers"])
@@ -227,7 +300,7 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
             )
             self.assertEqual(rc, 0)
 
-            target_path = ws_root / ".agents" / "mcp_config.json"
+            target_path = ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "mcp_config.json"
             content = json.loads(target_path.read_text(encoding="utf-8"))
             self.assertIn("google-workspace-drive", content["mcpServers"])
             self.assertIn("google-workspace-gmail", content["mcpServers"])
@@ -254,7 +327,7 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
             )
             self.assertEqual(rc, 0)
 
-            target_path = ws_root / ".agents" / "mcp_config.json"
+            target_path = ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "mcp_config.json"
             content = json.loads(target_path.read_text(encoding="utf-8"))
             self.assertIn("google-workspace-drive", content["mcpServers"])
             self.assertIn("google-workspace-docs", content["mcpServers"])
@@ -280,7 +353,7 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
                 ]
             )
             self.assertEqual(rc, 2)
-            self.assertFalse((ws_root / ".agents" / "mcp_config.json").exists())
+            self.assertFalse((ws_root / ".agents" / "plugins" / "google-workspace-mcp-setup" / "mcp_config.json").exists())
 
     def test_setup_fails_without_project_id_or_payload(self) -> None:
         rc = setup_mod.main(["--local"])

@@ -22,12 +22,14 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from harness_registry import (  # noqa: E402
+    ANTIGRAVITY_LOCAL_PLUGIN_MANIFEST_REL_PATH,
     ORDERED_SERVICES,
     WORKSPACE_SERVICES,
     AccessMode,
     WorkspaceServiceSpec,
     aggregate_adc_scopes,
     build_google_credentials_entry,
+    build_workspace_plugin_manifest,
     decode_config_payload,
     prompt_for_services,
     resolve_antigravity_config_path,
@@ -70,8 +72,8 @@ def prompt_for_scope() -> str:
         sys.exit(2)
 
     print("\nSelect installation target scope for Google Workspace MCP configuration:")
-    print("  [1] local  - Workspace-scoped (.agents/mcp_config.json, safe to commit to git)")
-    print("  [2] global - User-scoped (~/.gemini/config/mcp_config.json)")
+    print("  [1] local  - Workspace plugin (.agents/plugins/google-workspace-mcp-setup/mcp_config.json, safe to commit to git)")
+    print("  [2] global - User-scoped (~/.antigravity/config/mcp_config.json or ~/.gemini/config/mcp_config.json)")
     while True:
         try:
             choice = input("Enter choice [1/local, 2/global] (default: 1): ").strip().lower()
@@ -233,13 +235,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     scope_group.add_argument(
         "--local",
         action="store_true",
-        help="Write workspace-scoped config (.agents/mcp_config.json) safe to commit to git.",
+        help="Write workspace plugin config (.agents/plugins/google-workspace-mcp-setup/mcp_config.json + plugin.json) safe to commit to git.",
     )
     scope_group.add_argument(
         "--global",
         action="store_true",
         dest="global_config",
-        help="Write user-scoped global config (~/.gemini/config/mcp_config.json).",
+        help="Write user-scoped global config (~/.antigravity/config/mcp_config.json or ~/.gemini/config/mcp_config.json).",
     )
 
     parser.add_argument(
@@ -280,6 +282,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=None,
         help="Target workspace directory when using --local (defaults to current working directory).",
+    )
+    parser.add_argument(
+        "--gemini-dir",
+        type=Path,
+        default=None,
+        help="Override the Antigravity root directory (defaults to auto-discovering ~/.antigravity or ~/.gemini).",
     )
     parser.add_argument(
         "--dry-run",
@@ -387,7 +395,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.adc_login:
         run_adc_login(project_id, specs, mode, dry_run=args.dry_run)
 
-    target_path = resolve_antigravity_config_path(scope, workspace_root=args.workspace_root)
+    target_path = resolve_antigravity_config_path(
+        scope,
+        workspace_root=args.workspace_root,
+        gemini_dir=args.gemini_dir,
+    )
     new_servers = build_mcp_servers_map(
         specs,
         project_id=project_id,
@@ -400,10 +412,31 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         print(f"\n[Dry-Run] Planned changes for {target_path}:")
         print(diff if diff else "  (no changes — already up to date)")
+        if scope == "local":
+            manifest_p = (args.workspace_root or Path.cwd()) / ANTIGRAVITY_LOCAL_PLUGIN_MANIFEST_REL_PATH
+            print(f"[Dry-Run] Would ensure workspace plugin manifest at: {manifest_p}")
     else:
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(new_text, encoding="utf-8")
         print(f"Updated {target_path} ({len(new_servers)} Workspace MCP servers configured).")
+
+        if scope == "local":
+            plugin_manifest_path = (args.workspace_root or Path.cwd()) / ANTIGRAVITY_LOCAL_PLUGIN_MANIFEST_REL_PATH
+            if not plugin_manifest_path.exists():
+                plugin_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+                plugin_manifest_path.write_text(
+                    json.dumps(build_workspace_plugin_manifest(), indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                print(f"Created workspace plugin manifest: {plugin_manifest_path}")
+
+            legacy_bare_config = (args.workspace_root or Path.cwd()) / ".agents" / "mcp_config.json"
+            if legacy_bare_config.exists():
+                try:
+                    legacy_bare_config.unlink()
+                    print(f"Cleaned up legacy unread config: {legacy_bare_config}")
+                except Exception as exc:
+                    print(f"Warning: Could not remove legacy config {legacy_bare_config}: {exc}", file=sys.stderr)
 
     print("\n======================================================================")
     print(f"Workspace MCP Configuration Complete (project: {project_id}, mode: {mode.value})")

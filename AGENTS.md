@@ -8,7 +8,7 @@ This repository provides the `google-workspace-mcp-setup` AAIF skill, Antigravit
   - Canonical instructions live in root `AGENTS.md` (with `GEMINI.md` symlinked to `AGENTS.md`).
   - Canonical skill definitions live in `skills/google-workspace-mcp-setup/SKILL.md` (developer skill, also symlinked to root `SKILL.md`) and `skills/google-workspace-mcp-admin/SKILL.md` (admin skill), both exposed under `.agents/skills/`.
   - Root `plugin.json` adheres to the Antigravity plugin specification.
-  - Antigravity MCP configurations are written strictly to `.agents/mcp_config.json` (`--local`) or `~/.gemini/config/mcp_config.json` (`--global`), conforming to `https://antigravity.google/schemas/mcp_config.json`.
+  - Antigravity MCP configurations are written strictly to `.agents/plugins/google-workspace-mcp-setup/mcp_config.json` (`--local`) or `~/.antigravity/config/mcp_config.json` / `~/.gemini/config/mcp_config.json` (`--global`), conforming to `https://antigravity.google/schemas/mcp_config.json`.
 - **Language & Runtime**: Pure Python 3.11+ standard library (`from __future__ import annotations`, `dataclasses`, `pathlib`, `unittest`). Zero external PyPI dependencies.
 - **Portability & Security**:
   - Never hardcode usernames, corporate domains, or user-specific home paths; always resolve dynamically via `Path.home()` and `os.environ.get("USER")`.

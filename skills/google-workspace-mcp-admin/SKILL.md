@@ -89,4 +89,4 @@ When a client user runs these two prompts in Antigravity in their repository che
 1. **Prompt 1** installs the developer skill (`google-workspace-mcp-setup`) into `.agents/skills/google-workspace-mcp-setup/`.
 2. **Prompt 2** activates `google-workspace-mcp-setup`, decodes the base64 JSON payload, and confirms the administrator's settings to the developer.
 3. The developer can confirm all permitted tools or deselect any tools they do not need (they cannot install services the administrator did not enable).
-4. Antigravity writes the secret-free `.agents/mcp_config.json`, guides the developer through their 1-click local browser ADC login with least-privilege scopes, and verifies tool connectivity.
+4. Antigravity writes the secret-free `.agents/plugins/google-workspace-mcp-setup/` workspace plugin, guides the developer through their 1-click local browser ADC login with least-privilege scopes, and verifies tool connectivity.

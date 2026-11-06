@@ -22,7 +22,7 @@ An AAIF-compliant agent skill and Antigravity plugin that configures Google's 1P
 
 **How it works**  
 - **Admin bootstrap (`--admin-bootstrap`)**: enables the `*mcp.googleapis.com` APIs on a shared GCP quota project and binds `roles/mcp.toolUser` + `roles/serviceusage.serviceUsageConsumer` to a user or team Google Group.
-- **Secret-free Antigravity config generation (`--local` or `--global`)**: writes `.agents/mcp_config.json` (workspace-local) or `~/.gemini/config/mcp_config.json` (user-global) conforming strictly to `https://antigravity.google/schemas/mcp_config.json` with `"serverUrl"`, `"authProviderType": "google_credentials"`, and `"X-Goog-User-Project"`.
+- **Secret-free Antigravity config generation (`--local` or `--global`)**: writes `.agents/plugins/google-workspace-mcp-setup/mcp_config.json` (workspace plugin) or `~/.antigravity/config/mcp_config.json` / `~/.gemini/config/mcp_config.json` (user-global) conforming strictly to `https://antigravity.google/schemas/mcp_config.json` with `"serverUrl"`, `"authProviderType": "google_credentials"`, and `"X-Goog-User-Project"`.
 - **Per-user ADC login (`--adc-login`)**: runs `gcloud auth application-default login --scopes=...` with least-privilege `.readonly` (or `readwrite`) OAuth scopes so each developer authorizes their own local ADC token once without touching their Gemini Enterprise session in `~/.gemini/`.
 
 ---
@@ -73,7 +73,7 @@ Each developer runs the two prompts in Antigravity in their repository:
 2. **Configure using the skill and base64 JSON payload**:
    > *"Use the google-workspace-mcp-setup skill with payload `<BASE64_PAYLOAD>` to configure Google Workspace MCP in this repository."*
 
-Antigravity installs the **`google-workspace-mcp-setup`** skill into `.agents/skills/google-workspace-mcp-setup/` first, and in the second step invokes the skill to decode the payload, confirm the administrator's configuration, allow the developer to accept all permitted services or deselect any they don't need (strictly preventing installation of unpermitted services), generate the secret-free `.agents/mcp_config.json`, guide the developer through their 1-click local browser ADC login, and verify connectivity:
+Antigravity installs the **`google-workspace-mcp-setup`** skill into `.agents/skills/google-workspace-mcp-setup/` first, and in the second step invokes the skill to decode the payload, confirm the administrator's configuration, allow the developer to accept all permitted services or deselect any they don't need (strictly preventing installation of unpermitted services), generate the secret-free `.agents/plugins/google-workspace-mcp-setup/` workspace plugin, guide the developer through their 1-click local browser ADC login, and verify connectivity:
 
 ```bash
 # Manual developer run with payload:
@@ -88,7 +88,7 @@ python3 skills/google-workspace-mcp-setup/scripts/verify_workspace_mcp.py
 | Skill | Audience | Location | Purpose |
 | :--- | :--- | :--- | :--- |
 | **`google-workspace-mcp-admin`** | Cloud Admin / Project Owner | `skills/google-workspace-mcp-admin/` | Enables `*mcp.googleapis.com` endpoints, grants `roles/mcp.toolUser` to team members or Google Groups, and generates the two developer onboarding prompts. |
-| **`google-workspace-mcp-setup`** | Developer / Team Member | `skills/google-workspace-mcp-setup/` | Configures repository `.agents/mcp_config.json`, guides per-user ADC authentication, and runs quota coexistence verification. |
+| **`google-workspace-mcp-setup`** | Developer / Team Member | `skills/google-workspace-mcp-setup/` | Configures repository `.agents/plugins/google-workspace-mcp-setup/`, guides per-user ADC authentication, and runs quota coexistence verification. |
 
 ---
 
@@ -96,8 +96,9 @@ python3 skills/google-workspace-mcp-setup/scripts/verify_workspace_mcp.py
 
 * `project_id`: GCP Project ID used for `X-Goog-User-Project` quota and `roles/mcp.toolUser` IAM evaluation (optional when `--payload` is provided).
 * `--payload <BASE64>`: Administrator-generated base64 configuration payload containing GCP project ID, allowed services, and access mode.
-* `--local`: Write workspace-scoped config (`.agents/mcp_config.json`) safe to commit to git.
-* `--global`: Write user-scoped global config (`~/.gemini/config/mcp_config.json`).
+* `--local`: Write workspace plugin config (`.agents/plugins/google-workspace-mcp-setup/mcp_config.json` + `plugin.json`) safe to commit to git.
+* `--global`: Write user-scoped global config (`~/.antigravity/config/mcp_config.json` or `~/.gemini/config/mcp_config.json`).
+* `--gemini-dir`: Custom Antigravity root directory (defaults to auto-discovering `~/.antigravity` or `~/.gemini`).
 * `--services`: Comma-separated list (`drive,gmail,calendar,docs,sheets,slides,chat` or `all`). When `--payload` is present, services cannot exceed the administrator's permitted set. If omitted, prompts interactively with deselection or defaults to all permitted.
 * `--mode {readonly,readwrite}`: OAuth scope profile for ADC login (`readonly` by default for least privilege).
 * `--admin-bootstrap`: Enable `*mcp.googleapis.com` APIs and grant `roles/mcp.toolUser`.

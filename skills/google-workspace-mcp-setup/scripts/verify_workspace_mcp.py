@@ -116,7 +116,7 @@ def verify_setup(
     configured = find_configured_workspace_servers(workspace_root=workspace_root)
     print(f"\n[3/4] Configured Workspace MCP Servers ({len(configured)} found):")
     if not configured:
-        print("  ❌ No google-workspace-* servers found in .agents/mcp_config.json or ~/.gemini/config/mcp_config.json.")
+        print("  ❌ No google-workspace-* servers found in .agents/plugins/google-workspace-mcp-setup/mcp_config.json or global mcp_config.json.")
         return 1
 
     missing_scopes: list[str] = []
