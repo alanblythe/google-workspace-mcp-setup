@@ -77,16 +77,18 @@ In your **final message** to the administrator after running the skill, you **MU
 
 1. **Prompt 1 — Install the Skill**: Instructs the client user to install the `google-workspace-mcp-setup` skill:
    ```text
-   Install the google-workspace-mcp-setup skill from https://github.com/alanblythe/google-workspace-mcp-setup locally into this repository.
+   Install the google-workspace-mcp-setup skill from https://github.com/alanblythe/google-workspace-mcp-setup.
    ```
 
 2. **Prompt 2 — Use the Skill with the Base64 JSON Payload**: Starts with using the `google-workspace-mcp-setup` skill with the generated base64 JSON payload:
    ```text
-   Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to configure Google Workspace MCP in this repository.
+   Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to configure Google Workspace MCP.
    ```
 
-When a client user runs these two prompts in Antigravity in their repository checkout:
-1. **Prompt 1** installs the developer skill (`google-workspace-mcp-setup`) into `.agents/skills/google-workspace-mcp-setup/`.
-2. **Prompt 2** activates `google-workspace-mcp-setup`, decodes the base64 JSON payload, and confirms the administrator's settings to the developer.
+When a client user runs these two prompts in Antigravity:
+1. **Prompt 1** installs the developer skill (`google-workspace-mcp-setup`). The skill can be installed locally into the repository (`.agents/skills/google-workspace-mcp-setup/`) or globally for the user (`~/.antigravity/skills/` or `~/.gemini/skills/`).
+2. **Prompt 2** activates `google-workspace-mcp-setup`, decodes the base64 JSON payload, and **asks the developer whether they want to configure local or global scope**:
+   - **Local**: Generates `.agents/plugins/google-workspace-mcp-setup/` workspace plugin in the repository (safe to commit to git).
+   - **Global**: Generates `<gemini_dir>/config/mcp_config.json` (`~/.antigravity` or `~/.gemini`) for user-wide access across all repositories.
 3. The developer can confirm all permitted tools or deselect any tools they do not need (they cannot install services the administrator did not enable).
-4. Antigravity writes the secret-free `.agents/plugins/google-workspace-mcp-setup/` workspace plugin, guides the developer through their 1-click local browser ADC login with least-privilege scopes, and verifies tool connectivity.
+4. Antigravity writes the secret-free configuration, guides the developer through their 1-click local browser ADC login with least-privilege scopes, and verifies tool connectivity.

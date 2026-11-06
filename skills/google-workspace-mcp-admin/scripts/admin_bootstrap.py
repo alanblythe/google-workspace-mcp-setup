@@ -101,17 +101,14 @@ def run_admin_bootstrap(
 
 def format_install_skill_prompt() -> str:
     """Builds Prompt 1: instructs the client user to install the developer skill."""
-    return (
-        f"Install the google-workspace-mcp-setup skill from {GITHUB_REPO_URL} "
-        "locally into this repository."
-    )
+    return f"Install the google-workspace-mcp-setup skill from {GITHUB_REPO_URL}."
 
 
 def format_configure_skill_prompt(payload: str) -> str:
     """Builds Prompt 2: starts with using the skill with the base64 JSON payload."""
     return (
         f"Use the google-workspace-mcp-setup skill with payload {payload} "
-        "to configure Google Workspace MCP in this repository."
+        "to configure Google Workspace MCP."
     )
 
 
@@ -142,6 +139,7 @@ def print_developer_handoff_box(
     print(f'  "{install_prompt}"\n')
     print("Prompt 2 — Configure Google Workspace MCP with the base64 JSON payload:")
     print(f'  "{configure_prompt}"')
+    print("  (Note: The skill will ask you whether to install locally in this repo or globally for your user)\n")
     print("------------------------------------------------------------------------")
     print("=" * 72)
 

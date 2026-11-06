@@ -28,18 +28,39 @@ Configures Google's 1P Managed **Google Workspace MCP servers** (`drivemcp`, `gm
 
 ---
 
-## One-Step Execution Workflow
+## Execution Workflow
 
 Resolve the skill root dynamically relative to this `SKILL.md` file (`<skill-dir>`).
 
-When an engineer receives an onboarding prompt from their administrator or asks to set up Workspace MCP:
+### Step 1: Prompt the User for Scope (Local vs Global)
 
-### Mode A: Turnkey Setup with Admin Payload (Recommended)
+> [!IMPORTANT]
+> **Do not be opinionated or assume `--local` or `--global`.**
+> Unless the user has already explicitly stated their scope preference in their prompt (e.g., "install locally", "configure for this repo", or "install globally"), **always ask the user first** before running the setup command:
+>
+> *"Would you like to install Google Workspace MCP **locally** (as a workspace plugin in `.agents/plugins/google-workspace-mcp-setup/`, scoped to this repository and safe to commit to git) or **globally** (in your user config `~/.antigravity` / `~/.gemini`, available across all repositories)?"*
+
+- **Local (`--local`)**:
+  - Generates `.agents/plugins/google-workspace-mcp-setup/` (`plugin.json` + `mcp_config.json`).
+  - Safe to commit to git; automatically loaded whenever opening this repository in Antigravity.
+- **Global (`--global`)**:
+  - Generates `<gemini_dir>/config/mcp_config.json` (`~/.antigravity` or `~/.gemini`).
+  - Available across all projects and repositories on this machine.
+
+---
+
+### Step 2: Run Setup with the Chosen Scope
+
+#### Mode A: Turnkey Setup with Admin Payload (Recommended)
 
 When provided with a base64 configuration payload from `google-workspace-mcp-admin`:
 
 ```bash
+# If the user chose local:
 python3 <skill-dir>/scripts/setup_workspace_mcp.py --payload <BASE64_PAYLOAD> --local --adc-login
+
+# If the user chose global:
+python3 <skill-dir>/scripts/setup_workspace_mcp.py --payload <BASE64_PAYLOAD> --global --adc-login
 ```
 
 This single command automatically:
@@ -47,17 +68,21 @@ This single command automatically:
 2. **Deselection & Boundary Enforcement**:
    - In an interactive terminal, presents the developer with a numbered picker showing *only* the admin-permitted services. The developer can accept all or deselect any tools they don't need (e.g. entering `1,3` to install only Drive and Docs).
    - If a developer attempts to install services outside the administrator's configuration (via `--services`), the script strictly rejects the request and lists only permitted services.
-3. **Writes Secret-Free Config**: Generates `.agents/plugins/google-workspace-mcp-setup/mcp_config.json` and `plugin.json` containing only the selected services with `"authProviderType": "google_credentials"` and `"X-Goog-User-Project"`.
+3. **Writes Secret-Free Config**: Generates the configuration in the chosen scope (`.agents/plugins/google-workspace-mcp-setup/` for `--local` or `<gemini_dir>/config/mcp_config.json` for `--global`) containing only the selected services with `"authProviderType": "google_credentials"` and `"X-Goog-User-Project"`.
 4. **Authenticates ADC**: Opens your browser for a quick 1-click Google authorization requesting only the OAuth scopes needed for your selected tools, and sets the ADC quota project.
 
 ---
 
-### Mode B: Direct Setup with Project ID
+#### Mode B: Direct Setup with Project ID
 
 For solo developers or admins configuring directly without a payload:
 
 ```bash
+# If the user chose local:
 python3 <skill-dir>/scripts/setup_workspace_mcp.py <PROJECT_ID> --local --adc-login
+
+# If the user chose global:
+python3 <skill-dir>/scripts/setup_workspace_mcp.py <PROJECT_ID> --global --adc-login
 ```
 
 You can pass `--services` (e.g. `--services drive,gmail,docs` or `--services all`) or pick interactively from all 7 available services.

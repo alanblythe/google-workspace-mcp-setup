@@ -436,7 +436,7 @@ class TestAdminBootstrap(unittest.TestCase):
         self.assertEqual(
             install_prompt,
             "Install the google-workspace-mcp-setup skill from "
-            "https://github.com/alanblythe/google-workspace-mcp-setup locally into this repository.",
+            "https://github.com/alanblythe/google-workspace-mcp-setup.",
         )
         self.assertNotIn(payload, install_prompt)
         self.assertTrue(
@@ -446,7 +446,7 @@ class TestAdminBootstrap(unittest.TestCase):
         self.assertEqual(
             configure_prompt,
             f"Use the google-workspace-mcp-setup skill with payload {payload} "
-            "to configure Google Workspace MCP in this repository.",
+            "to configure Google Workspace MCP.",
         )
 
     @patch("admin_bootstrap.run_cmd")
