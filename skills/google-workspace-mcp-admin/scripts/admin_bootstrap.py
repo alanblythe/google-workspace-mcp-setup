@@ -16,12 +16,8 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[2]
-SETUP_SCRIPTS_DIR = REPO_ROOT / "skills" / "google-workspace-mcp-setup" / "scripts"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
-if str(SETUP_SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SETUP_SCRIPTS_DIR))
 
 from harness_registry import (  # noqa: E402
     AccessMode,
@@ -101,7 +97,10 @@ def run_admin_bootstrap(
 
 def format_install_skill_prompt() -> str:
     """Builds Prompt 1: instructs the client user to install the developer skill."""
-    return f"Install the google-workspace-mcp-setup skill from {GITHUB_REPO_URL}."
+    return (
+        f"Install the google-workspace-mcp-setup skill: "
+        f"npx skills add {GITHUB_REPO_URL} -s google-workspace-mcp-setup -a antigravity"
+    )
 
 
 def format_configure_skill_prompt(payload: str) -> str:

@@ -6,7 +6,7 @@ This repository provides the `google-workspace-mcp-setup` AAIF skill, Antigravit
 
 - **Antigravity & AAIF Compliance**:
   - Canonical instructions live in root `AGENTS.md` (with `GEMINI.md` symlinked to `AGENTS.md`).
-  - Canonical skill definitions live in `skills/google-workspace-mcp-setup/SKILL.md` (developer skill, also symlinked to root `SKILL.md`) and `skills/google-workspace-mcp-admin/SKILL.md` (admin skill), both exposed under `.agents/skills/`.
+  - Canonical skill definitions live in `skills/google-workspace-mcp-setup/SKILL.md` (developer skill) and `skills/google-workspace-mcp-admin/SKILL.md` (admin skill), both self-contained for `npx skills` discovery (`-s <skill-name>`) and exposed under `.agents/skills/`.
   - Root `plugin.json` adheres to the Antigravity plugin specification.
   - Antigravity MCP configurations are written strictly to `.agents/plugins/google-workspace-mcp-setup/mcp_config.json` (`--local`) or `~/.antigravity/config/mcp_config.json` / `~/.gemini/config/mcp_config.json` (`--global`), conforming to `https://antigravity.google/schemas/mcp_config.json`.
 - **Language & Runtime**: Pure Python 3.11+ standard library (`from __future__ import annotations`, `dataclasses`, `pathlib`, `unittest`). Zero external PyPI dependencies.

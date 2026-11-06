@@ -75,9 +75,9 @@ This:
 
 In your **final message** to the administrator after running the skill, you **MUST** present **two separate, copy-pasteable prompts** for the administrator to share with client users (in Slack, Google Chat, PR description, or onboarding wiki):
 
-1. **Prompt 1 — Install the Skill**: Instructs the client user to install the `google-workspace-mcp-setup` skill:
+1. **Prompt 1 — Install the Skill**: Instructs the client user to install the `google-workspace-mcp-setup` skill using `-s google-workspace-mcp-setup`:
    ```text
-   Install the google-workspace-mcp-setup skill from https://github.com/alanblythe/google-workspace-mcp-setup.
+   Install the google-workspace-mcp-setup skill: npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
    ```
 
 2. **Prompt 2 — Use the Skill with the Base64 JSON Payload**: Starts with using the `google-workspace-mcp-setup` skill with the generated base64 JSON payload:

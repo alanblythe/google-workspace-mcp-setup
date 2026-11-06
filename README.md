@@ -29,10 +29,16 @@ An AAIF-compliant agent skill and Antigravity plugin that configures Google's 1P
 
 ## Quickstart
 
-### 1. Install as an Antigravity Plugin or Skill
+### 1. Install as an Antigravity Skill or Plugin
 
 ```bash
-# Install via npx skills (AAIF open standard)
+# Install the developer skill (google-workspace-mcp-setup) via npx skills
+npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
+
+# Install the admin skill (google-workspace-mcp-admin) via npx skills
+npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-admin -a antigravity
+
+# Or choose interactively between both skills
 npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -a antigravity
 
 # Or install as an Antigravity plugin
@@ -46,18 +52,25 @@ agy plugin install ./google-workspace-mcp-setup
 
 #### Cohort A — Cloud Administrator (Once per GCP Project)
 
-The administrator runs the **`google-workspace-mcp-admin`** skill (or script) to choose which Workspace MCPs to enable, activate the GCP APIs, grant `roles/mcp.toolUser` to the team, and generate a tamper-evident base64 configuration payload:
+The administrator installs and runs the **`google-workspace-mcp-admin`** skill (or script) to choose which Workspace MCPs to enable, activate the GCP APIs, grant `roles/mcp.toolUser` to the team, and generate a tamper-evident base64 configuration payload:
+
+1. **Install the admin skill**:
+   > *"Install the google-workspace-mcp-admin skill: `npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-admin -a antigravity`"*
+
+2. **Bootstrap the GCP project** (via prompt or CLI):
+   > *"Use the google-workspace-mcp-admin skill to bootstrap GCP project `YOUR_PROJECT_ID` for principal `group:developers@yourdomain.com`."*
 
 ```bash
+# Or run directly from a repository checkout:
 python3 skills/google-workspace-mcp-admin/scripts/admin_bootstrap.py YOUR_PROJECT_ID \
   --principal "group:developers@yourdomain.com"
 ```
 
-The script interactively presents the Workspace service selector (or accepts `--services`), enables only those APIs, and prints **two copy-pasteable Developer Onboarding Prompts** (one to install the skill, and a second to run the skill with the base64 JSON configuration payload):
+The script interactively presents the Workspace service selector (or accepts `--services`), enables only those APIs, and prints **two copy-pasteable Developer Onboarding Prompts** (one to install the developer skill via `-s google-workspace-mcp-setup`, and a second to run the skill with the base64 JSON configuration payload):
 
 ```text
 Prompt 1 (Install the skill):
-Install the google-workspace-mcp-setup skill from https://github.com/alanblythe/google-workspace-mcp-setup.
+Install the google-workspace-mcp-setup skill: npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity
 
 Prompt 2 (Configure with payload):
 Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to configure Google Workspace MCP.
@@ -68,7 +81,7 @@ Use the google-workspace-mcp-setup skill with payload <BASE64_PAYLOAD> to config
 Each developer runs the two prompts in Antigravity:
 
 1. **Install the developer skill**:
-   > *"Install the google-workspace-mcp-setup skill from https://github.com/alanblythe/google-workspace-mcp-setup."*
+   > *"Install the google-workspace-mcp-setup skill: `npx skills add https://github.com/alanblythe/google-workspace-mcp-setup -s google-workspace-mcp-setup -a antigravity`"*
 
 2. **Configure using the skill and base64 JSON payload**:
    > *"Use the google-workspace-mcp-setup skill with payload `<BASE64_PAYLOAD>` to configure Google Workspace MCP."*
@@ -133,7 +146,6 @@ python3 -m unittest discover -s tests -v
 ├── AGENTS.md                                  # Canonical AAIF agent instructions (GEMINI.md symlinked)
 ├── LICENSE                                    # Apache License, Version 2.0
 ├── README.md                                  # Quickstart, architecture, and CLI reference
-├── SKILL.md                                   # Root symlink to skills/google-workspace-mcp-setup/SKILL.md
 ├── plugin.json                                # Antigravity plugin manifest
 ├── .agents/skills/
 │   ├── google-workspace-mcp-setup             # AAIF developer skill symlink
@@ -146,7 +158,7 @@ python3 -m unittest discover -s tests -v
 │   │   ├── SKILL.md                           # Admin skill specification & workflow
 │   │   └── scripts/
 │   │       ├── admin_bootstrap.py             # GCP API activator, IAM binder, and onboarding payload encoder
-│   │       └── harness_registry.py            # Symlink to shared registry & payload codecs
+│   │       └── harness_registry.py            # Shared registry & payload codecs (self-contained)
 │   └── google-workspace-mcp-setup/
 │       ├── SKILL.md                           # Developer skill specification & workflow
 │       └── scripts/

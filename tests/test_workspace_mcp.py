@@ -430,14 +430,37 @@ class TestSetupWorkspaceMcp(unittest.TestCase):
 
 
 class TestAdminBootstrap(unittest.TestCase):
+    def test_repo_skill_layout_is_self_contained_for_npx_skills(self) -> None:
+        root_skill_md = REPO_ROOT / "SKILL.md"
+        self.assertFalse(
+            root_skill_md.exists() or root_skill_md.is_symlink(),
+            "Root SKILL.md must not exist so 'npx skills' discovers both skills under skills/*.",
+        )
+
+        setup_registry = SCRIPTS_DIR / "harness_registry.py"
+        admin_registry = ADMIN_SCRIPTS_DIR / "harness_registry.py"
+        self.assertTrue(setup_registry.is_file())
+        self.assertTrue(admin_registry.is_file())
+        self.assertFalse(
+            admin_registry.is_symlink(),
+            "admin harness_registry.py must be a regular file (not a cross-skill symlink) for npx skills.",
+        )
+        self.assertEqual(
+            setup_registry.read_text(encoding="utf-8"),
+            admin_registry.read_text(encoding="utf-8"),
+            "Both skill copies of harness_registry.py must remain identical.",
+        )
+
     def test_format_developer_prompts_returns_install_and_payload_prompts(self) -> None:
         payload = hr.encode_config_payload("test-project-123", ["drive", "docs"])
         install_prompt, configure_prompt = admin_mod.format_developer_prompts(payload)
         self.assertEqual(
             install_prompt,
-            "Install the google-workspace-mcp-setup skill from "
-            "https://github.com/alanblythe/google-workspace-mcp-setup.",
+            "Install the google-workspace-mcp-setup skill: "
+            "npx skills add https://github.com/alanblythe/google-workspace-mcp-setup "
+            "-s google-workspace-mcp-setup -a antigravity",
         )
+        self.assertIn("-s google-workspace-mcp-setup", install_prompt)
         self.assertNotIn(payload, install_prompt)
         self.assertTrue(
             configure_prompt.startswith("Use the google-workspace-mcp-setup skill"),
